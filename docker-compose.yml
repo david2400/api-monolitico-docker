@@ -1,0 +1,50 @@
+version: "2.2"
+services:
+  dbmysql01:
+    container_name: mysql_monolitico
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+    volumes:
+      - ./db/binds/mysql_01:/var/lib/mysql
+      - ./db/mysql-dump:/docker-entrypoint-initdb.d
+    security_opt:
+      - seccomp:unconfined
+
+    networks:
+      - net_monolitico
+
+  app_monolitico:
+    container_name: app-monolitico
+    build:
+      dockerfile: dockerfile
+      context: .
+      args:
+        VAR_PROFILE: dev
+
+    restart: on-failure
+
+    environment:
+      - HOST=dbmysql01
+      - PORT=3306
+      - USER=root
+      - PASSWORD=root
+    expose:
+      - "8092"
+
+
+    ports:
+      - "8092:8090"
+
+    networks:
+      - net_monolitico
+
+    depends_on:
+      - dbmysql01
+
+networks:
+  net_monolitico:
+    driver: bridge
+    name: net_monolitico
